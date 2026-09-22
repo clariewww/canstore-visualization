@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="An interactive visualization of CANSTOREnergy personnel and research output records.">
+  <title>CANSTOREnergy · Research visualization</title>
+  <link rel="icon" type="image/png" href="assets/branding/canstore-logo-transparent.png">
+  <link rel="stylesheet" href="assets/dandelion.css?v=20260922e">
+  <script defer src="assets/dandelion_data.js"></script>
+  <script defer src="assets/dandelion_layout.js?v=20260922e"></script>
+  <script defer src="assets/dandelion.js?v=20260922e"></script>
+</head>
+<body>
+  <a class="skip-link" href="#research-story">Skip to the research story</a>
+  <header class="page-header">
+    <a class="brand" href="dandelion.html" aria-label="CANSTOREnergy — return to the beginning">
+      <img src="assets/branding/canstore-logo-transparent.png" width="1935" height="812" alt="CANSTOREnergy">
+    </a>
+  </header>
+  <main id="research-story">
+    <aside class="story" aria-label="Three years of research">
+      <div class="story-intro">
+        <h1 class="placeholder-text">Title to be added</h1>
+        <p class="intro placeholder-text">Subtitle to be added.</p>
+        <p class="explanation placeholder-text">Description to be added.</p>
+        <a class="scroll-cue" href="#year-1">Scroll to watch it grow <span aria-hidden="true">↓</span></a>
+      </div>
+      <section class="chapter" id="year-1" data-chapter="1">
+        <span class="chapter-year">Year 1</span>
+        <h2 class="placeholder-text">Year 1 title to be added</h2>
+        <p class="placeholder-text">Year 1 description to be added.</p>
+        <div class="chapter-count"><strong>7</strong><span>cumulative<br>outputs</span></div>
+      </section>
+      <section class="chapter" id="year-2" data-chapter="2">
+        <span class="chapter-year">Year 2</span>
+        <h2 class="placeholder-text">Year 2 title to be added</h2>
+        <p class="placeholder-text">Year 2 description to be added.</p>
+        <div class="chapter-count"><strong>42</strong><span>cumulative<br>outputs</span></div>
+      </section>
+      <section class="chapter" id="year-3" data-chapter="3">
+        <span class="chapter-year">Year 3</span>
+        <h2 class="placeholder-text">Year 3 title to be added</h2>
+        <p class="placeholder-text">Year 3 description to be added.</p>
+        <div class="chapter-count"><strong>76</strong><span>cumulative<br>outputs</span></div>
+      </section>
+    </aside>
+    <div class="visual-column">
+      <div class="pinned-view">
+        <section class="visual" aria-label="Interactive research dandelion">
+          <svg id="flower" viewBox="10 15 880 830" role="group" aria-label="Research outputs surrounding a fixed core of contributors"></svg>
+          <div id="tooltip" role="tooltip" hidden></div>
+        </section>
+        <div class="graph-caption">
+          <div class="graph-status"><p id="count" aria-live="polite">Loading research records…</p></div>
+          <div class="legend output-legend" aria-label="Output legend: PI means principal investigator">
+            <span title="Fewer than two recorded PI authors"><i class="standard-key" aria-hidden="true"></i><span class="legend-copy">Standard<small>Fewer than 2 PIs</small></span></span>
+            <span title="At least two recorded PI authors, all from the same subteam"><i class="multiple-key" aria-hidden="true"></i><span class="legend-copy">Multiple PIs<small>Same subteam</small></span></span>
+            <span title="At least two recorded PI authors representing different subteams"><i class="cross-pi-key" aria-hidden="true"></i><span class="legend-copy">Cross-subteam PIs<small>2+ PI subteams</small></span></span>
+          </div>
+          <div class="legend people-legend" aria-label="People by subteam">
+            <span><i class="discover" aria-hidden="true"></i>Discover</span>
+            <span><i class="direct" aria-hidden="true"></i>Direct</span>
+            <span title="No contributors from Develop are recorded in the current outputs"><i class="develop" aria-hidden="true"></i>Develop</span>
+          </div>
+          <p class="graph-note">PI = principal investigator. Person size reflects outputs across all years. <br>Seed size and branch length are decorative; branches group scopes.</p>
+        </div>
+        <div class="detail-dock" id="detail-dock">
+          <p class="details-empty" id="details-empty">Select a seed or person to explore their connections <span aria-hidden="true">↗</span></p>
+          <section class="detail-shell" id="detail-shell" hidden aria-labelledby="detail-title">
+            <div class="detail-surface">
+              <div class="detail-toolbar"><span id="detail-kind">Research output</span><button id="clear" type="button" aria-label="Close selection details">Close <span aria-hidden="true">×</span></button></div>
+              <div id="details" tabindex="0" aria-label="Selection details"></div>
+              <p id="details-scroll-hint" hidden>More details below <span aria-hidden="true">↓</span></p>
+            </div>
+          </section>
+          <p class="sr-only" id="selection-announcement" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+  </main>
+  <noscript><p class="load-error">Enable JavaScript to explore the interactive flower. The research story remains available above.</p></noscript>
+</body>
+</html>
