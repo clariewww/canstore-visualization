@@ -19,3 +19,7 @@ main{display:grid;grid-template-columns:minmax(240px,1fr) minmax(0,2fr);gap:1.5r
 #flower{outline:none}.seed-art,.seed-pulse{transform-origin:0 0}
 
 #details-scroll-hint{margin:0;padding:.15rem 1rem .35rem;text-align:right;font-size:.63rem;color:var(--muted);flex-shrink:0;background:#fcfdf6;box-shadow:0 -7px 12px #fcfdf6}#details-scroll-hint span{margin-left:.4rem}
+
+/* Silhouette encodes output type; color and the centre encode PI collaboration. */
+.type-legend{gap:1.35rem;margin-bottom:.7rem;font-size:.72rem;color:var(--ink)}.type-legend svg{width:1.25rem;height:1.25rem;flex-shrink:0;fill:#dce9de;stroke:#537c68;stroke-width:1.2;stroke-linejoin:round}.seed .halo{stroke-linejoin:round}
+@media(max-width:800px){.type-legend{gap:1rem;margin-bottom:.45rem;font-size:.65rem}.type-legend svg{width:1.1rem;height:1.1rem}}

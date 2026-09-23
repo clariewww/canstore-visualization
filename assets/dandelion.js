@@ -20,7 +20,7 @@
   const {people, outputs} = window.CANSTORE_DATA;
   const byPerson = new Map(people.map(p => [p.person_id, p]));
   const byOutput = new Map(outputs.map(o => [o.publication_id, o]));
-  const {layoutPeople, layoutOutputs, classifyPIs, contributorCounts, personRadius} = window.CANSTORE_LAYOUT;
+  const {layoutPeople, layoutOutputs, classifyPIs, contributorCounts, personRadius, outputShape, seedContourRadius, seedOutline} = window.CANSTORE_LAYOUT;
   const positions = layoutPeople(people, {cx, cy});
   const totals = contributorCounts(people, outputs);
   const maximumTotal = Math.max(...totals.values());
@@ -104,7 +104,11 @@
     const label = el('text', {x:lx, y:ly, class:'scope-label', 'text-anchor':'middle'}, labelLayer);
     label.textContent = scope.startsWith('Unassigned') ? scope.replace('Unassigned · ', '') + ' · unassigned' : scope;
   });
+  document.querySelectorAll('[data-type-symbol]').forEach(symbol => {
+    el('path', {d:seedOutline(symbol.getAttribute('data-type-symbol'), 10)}, symbol);
+  });
   outputs.forEach(output => {
+    const shape = outputShape(output.type);
     const id = output.publication_id, phase = Number(id) * 2.399963;
     const {x, y, angle:a, radius:seedRadius, scope, controlAngle} = flowerLayout.positions.get(id);
     const [sx, sy] = point(a, 101);
@@ -115,15 +119,16 @@
     const path = el('path', {d:`M${sx},${sy} Q${mx},${my} ${x},${y}`, class:'branch', 'pointer-events':'none', 'stroke-width':.7 + Number(id) % 4 * .1}, twig);
     path.style.transformOrigin = `${sx}px ${sy}px`;
     const pi = classifications.get(id), label = pi.unknown ? 'PI involvement unknown' : categoryLabels[pi.category];
-    const node = el('g', {class:`seed ${pi.category}`, role:'button', tabindex:'0', transform:`translate(${x} ${y})`, 'aria-label':`${output.title}, year ${output.year}, ${label}`, 'aria-controls':'detail-shell', 'data-output':id, 'data-pi-category':pi.category}, twig);
+    const node = el('g', {class:`seed ${pi.category}`, role:'button', tabindex:'0', transform:`translate(${x} ${y})`, 'aria-label':`${output.title}, ${output.type || "Output type unrecorded"}, year ${output.year}, ${label}`, 'aria-controls':'detail-shell', 'data-output':id, 'data-pi-category':pi.category, 'data-output-shape':shape}, twig);
     const art = el('g', {class:'seed-art'}, node);
     el('circle', {r:seedRadius+5, class:'selection-ring'}, art);
     const pulse = el('g', {class:'seed-pulse'}, art);
     seedPulse.set(id, pulse);
-    el('circle', {r:seedRadius, class:'halo'}, pulse);
+    el('path', {d:seedOutline(shape, seedRadius), class:'halo'}, pulse);
     for (let j=0; j<10; j++) {
       const theta = j * Math.PI / 5 + Math.sin(phase) * .18;
-      const tx = Math.cos(theta) * seedRadius, ty = Math.sin(theta) * seedRadius;
+      const contourRadius = seedContourRadius(shape, seedRadius, theta);
+      const tx = Math.cos(theta) * contourRadius, ty = Math.sin(theta) * contourRadius;
       el('path', {d:`M${Math.cos(theta)*4},${Math.sin(theta)*4} L${tx},${ty}`, class:'filament'}, pulse);
       el('circle', {cx:tx, cy:ty, r:1.15, class:'seed-tip'}, pulse);
     }
@@ -137,7 +142,7 @@
       el('circle', {r:2.2, class:'seed-heart'}, pulse);
     }
     el('circle', {r:seedRadius+3, fill:'transparent'}, node);
-    bind(node, `${output.short_title||output.title} · Year ${output.year} · ${label} · ${scope}`, {kind:'output',id});
+    bind(node, `${output.short_title||output.title} · ${output.type || "Output type unrecorded"} · Year ${output.year} · ${label} · ${scope}`, {kind:'output',id});
     branches.set(id,path); seedElements.set(id,node); seedArt.set(id,art); twigs.set(id,twig);
   });
 

@@ -187,5 +187,27 @@
     }])), labels};
   }
 
-  return {layoutPeople, layoutOutputs, classifyPIs, contributorCounts, personRadius};
+  function outputShape(type) {
+    const normalized = String(type || '').trim().toLowerCase();
+    return normalized === 'journal' ? 'journal' : normalized === 'conference' ? 'conference' : 'other';
+  }
+
+  // Shared contours keep the legend, filaments and interactive seed artwork aligned.
+  // Every silhouette fits the existing radius, preserving spacing and hit targets.
+  function seedContourRadius(shape, radius, angle) {
+    if (shape === 'conference') return radius * (.9 + .1 * Math.cos(8 * (angle + Math.PI / 2)));
+    if (shape === 'other') return radius * (.77 + .23 * Math.cos(5 * (angle + Math.PI / 2)));
+    return radius;
+  }
+
+  function seedOutline(shape, radius) {
+    const samples = 160;
+    return Array.from({length:samples}, (_, index) => {
+      const angle = index * Math.PI * 2 / samples - Math.PI / 2;
+      const r = seedContourRadius(shape, radius, angle);
+      return `${index ? 'L' : 'M'}${(Math.cos(angle)*r).toFixed(3)},${(Math.sin(angle)*r).toFixed(3)}`;
+    }).join(' ') + ' Z';
+  }
+
+  return {layoutPeople, layoutOutputs, classifyPIs, contributorCounts, personRadius, outputShape, seedContourRadius, seedOutline};
 });

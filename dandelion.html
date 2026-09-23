@@ -6,10 +6,10 @@
   <meta name="description" content="An interactive visualization of CANSTOREnergy personnel and research output records.">
   <title>CANSTOREnergy · Research visualization</title>
   <link rel="icon" type="image/png" href="assets/branding/canstore-logo-transparent.png">
-  <link rel="stylesheet" href="assets/dandelion.css?v=20260922e">
+  <link rel="stylesheet" href="assets/dandelion.css?v=20260923a">
   <script defer src="assets/dandelion_data.js"></script>
-  <script defer src="assets/dandelion_layout.js?v=20260922e"></script>
-  <script defer src="assets/dandelion.js?v=20260922e"></script>
+  <script defer src="assets/dandelion_layout.js?v=20260923a"></script>
+  <script defer src="assets/dandelion.js?v=20260923a"></script>
 </head>
 <body>
   <a class="skip-link" href="#research-story">Skip to the research story</a>
@@ -53,6 +53,11 @@
         </section>
         <div class="graph-caption">
           <div class="graph-status"><p id="count" aria-live="polite">Loading research records…</p></div>
+          <div class="legend type-legend" aria-label="Seed shapes show output type">
+            <span><svg viewBox="-12 -12 24 24" data-type-symbol="journal" aria-hidden="true"></svg>Journal</span>
+            <span><svg viewBox="-12 -12 24 24" data-type-symbol="conference" aria-hidden="true"></svg>Conference</span>
+            <span title="Other outputs, interviews, and reports or briefs"><svg viewBox="-12 -12 24 24" data-type-symbol="other" aria-hidden="true"></svg>Other</span>
+          </div>
           <div class="legend output-legend" aria-label="Output legend: PI means principal investigator">
             <span title="Fewer than two recorded PI authors"><i class="standard-key" aria-hidden="true"></i><span class="legend-copy">Standard<small>Fewer than 2 PIs</small></span></span>
             <span title="At least two recorded PI authors, all from the same subteam"><i class="multiple-key" aria-hidden="true"></i><span class="legend-copy">Multiple PIs<small>Same subteam</small></span></span>
