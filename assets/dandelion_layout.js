@@ -195,8 +195,7 @@
   // Shared contours keep the legend, filaments and interactive seed artwork aligned.
   // Every silhouette fits the existing radius, preserving spacing and hit targets.
   function seedContourRadius(shape, radius, angle) {
-    if (shape === 'conference') return radius * (.9 + .1 * Math.cos(8 * (angle + Math.PI / 2)));
-    if (shape === 'other') return radius * (.77 + .23 * Math.cos(5 * (angle + Math.PI / 2)));
+    if (shape === 'conference') return radius * (.96 + .04 * Math.cos(8 * (angle + Math.PI / 2)));
     return radius;
   }
 

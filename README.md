@@ -17,8 +17,8 @@ In GitHub Settings → Pages, choose “Deploy from a branch,” then `main` and
 - Contributors with recorded outputs: 60.
 - PI categories: 56 standard, 18 multiple PIs from one subteam, 2 cross-subteam PIs.
 - Five outputs lack recorded authors; their PI involvement is marked unknown.
-- Seed shapes: circles for 36 journal outputs, scalloped circles for 31 conference outputs,
-  and soft stars for 9 other outputs (including interviews and reports or briefs).
+- Seed shapes: circles for 36 journal outputs, gently scalloped circles for 31 conference outputs,
+  and circles for 9 other outputs (including interviews and reports or briefs).
 - Person sizes reflect total recorded outputs across all three years.
 - Seed sizes and branch lengths are decorative; their positions remain fixed across years.
 
