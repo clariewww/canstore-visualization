@@ -82,6 +82,12 @@
   el('stop', {offset:'0%', 'stop-color':'#d9e8d9', 'stop-opacity':'.72'}, wash);
   el('stop', {offset:'70%', 'stop-color':'#d9e8d9', 'stop-opacity':'.35'}, wash);
   el('stop', {offset:'100%', 'stop-color':'#d9e8d9', 'stop-opacity':'0'}, wash);
+  const light = el('radialGradient', {id:'seed-light', cx:'28%', cy:'22%', r:'78%'}, defs);
+  el('stop', {offset:'0%', 'stop-color':'#fffef2', 'stop-opacity':'.78'}, light);
+  el('stop', {offset:'55%', 'stop-color':'#fffef2', 'stop-opacity':'.08'}, light);
+  el('stop', {offset:'100%', 'stop-color':'#315f4f', 'stop-opacity':'.12'}, light);
+  const shadow = el('filter', {id:'seed-shadow', x:'-35%', y:'-35%', width:'180%', height:'190%', 'color-interpolation-filters':'sRGB'}, defs);
+  el('feDropShadow', {dx:'1.5', dy:'3', stdDeviation:'2.3', 'flood-color':'#315f4f', 'flood-opacity':'.13'}, shadow);
   el('path', {d:`M ${cx+10} ${cy+27} C 556 535 645 690 662 828 L 667 828 C 649 687 563 531 ${cx+15} ${cy+24} Z`, class:'stem', 'aria-hidden':'true'});
   const labelLayer = el('g', {'aria-hidden':'true'});
   const linkLayer = el('g', {'aria-hidden':'true'});
@@ -114,7 +120,9 @@
     const [sx, sy] = point(a, 101);
     const [mx, my] = point(controlAngle, 180 + Math.sin(phase) * 10);
     outputPositions.set(id, [x, y]);
-    const twig = el('g', {class:'twig', 'data-twig':id}, twigLayer);
+    // Decorative depth is independent of output type, year and collaboration.
+    const depth = .5 + .5 * Math.sin(phase);
+    const twig = el('g', {class:'twig', 'data-twig':id, 'data-depth':depth > .55 ? 'front' : 'back'}, twigLayer);
     twig.style.transformOrigin = `${sx}px ${sy}px`;
     const path = el('path', {d:`M${sx},${sy} Q${mx},${my} ${x},${y}`, class:'branch', 'pointer-events':'none', 'stroke-width':.7 + Number(id) % 4 * .1}, twig);
     path.style.transformOrigin = `${sx}px ${sy}px`;
@@ -125,6 +133,7 @@
     const pulse = el('g', {class:'seed-pulse'}, art);
     seedPulse.set(id, pulse);
     el('path', {d:seedOutline(shape, seedRadius), class:'halo'}, pulse);
+    el('path', {d:seedOutline(shape, seedRadius - .8), class:'seed-light', 'aria-hidden':'true'}, pulse);
     for (let j=0; j<10; j++) {
       const theta = j * Math.PI / 5 + Math.sin(phase) * .18;
       const contourRadius = seedContourRadius(shape, seedRadius, theta);
@@ -152,24 +161,30 @@
     swayAnimations.clear();
     if (reducedMotion.matches) return;
     outputs.forEach(output => {
-      const id=output.publication_id, n=Number(id), amplitude=.9+(n%5)*.09;
+      const id=output.publication_id, n=Number(id);
+      const angle=flowerLayout.positions.get(id).angle;
+      const depth=.5+.5*Math.sin(n*2.399963);
+      const amplitude=1.05+depth*.65;
+      // A shared breeze passes around the flower, with a smaller returning gust.
+      // Fixed anchors and neutral first frames keep selected authorship lines aligned.
+      const duration=7200;
       const animation=twigs.get(id).animate([
         {transform:'rotate(0deg)'},
         {transform:`rotate(${amplitude}deg)`},
-        {transform:'rotate(0deg)'},
-        {transform:`rotate(${-amplitude}deg)`},
+        {transform:`rotate(${amplitude*.25}deg)`,offset:.52},
+        {transform:`rotate(${-amplitude*.7}deg)`,offset:.8},
         {transform:'rotate(0deg)'}
-      ], {duration:5800+n%7*450, iterations:Infinity, easing:'cubic-bezier(.45,0,.55,1)'});
+      ], {duration, iterations:Infinity, easing:'cubic-bezier(.45,0,.55,1)'});
       animation.pause();
-      animation.currentTime = (n*443)%(5800+n%7*450);
+      animation.currentTime = ((angle+Math.PI)*380 + depth*250)%duration;
       const unfurl=seedPulse.get(id).animate([
         {transform:'rotate(0deg) scale(1)'},
-        {transform:'rotate(5deg) scale(1.035)',offset:.4},
-        {transform:'rotate(-3deg) scale(.985)',offset:.8},
+        {transform:`rotate(7deg) scale(${1.025+depth*.02}, .96)`,offset:.38},
+        {transform:'rotate(-5deg) scale(.975, 1.025)',offset:.76},
         {transform:'rotate(0deg) scale(1)'}
-      ], {duration:4400+n%5*530, iterations:Infinity, easing:'cubic-bezier(.45,0,.55,1)'});
+      ], {duration:5100+n%5*420, iterations:Infinity, easing:'cubic-bezier(.45,0,.55,1)'});
       unfurl.pause();
-      unfurl.currentTime=(n*379)%(4400+n%5*530);
+      unfurl.currentTime=(n*379)%(5100+n%5*420);
       swayAnimations.set(id,[animation,unfurl]);
     });
     syncMotion();
@@ -184,7 +199,7 @@
         if (selection || reducedMotion.matches) animation.currentTime=0;
       });
     });
-    growthAnimations.forEach(animation => (reducedMotion.matches || document.hidden) ? animation.pause() : animation.play());
+    growthAnimations.forEach(animation => paused ? animation.pause() : animation.play());
   }
   function cancelGrowth() {
     growthAnimations.forEach(animation => animation.cancel());
@@ -196,11 +211,11 @@
       const branch=branches.get(output.publication_id), art=seedArt.get(output.publication_id);
       const branchAnimation=branch.animate([
         {transform:'scale(.05)',opacity:0},
-        {transform:'scale(1)',opacity:.52}
+        {transform:'scale(1)',opacity:twigs.get(output.publication_id).getAttribute('data-depth') === 'front' ? .64 : .34}
       ],{duration:1250,delay:i*25,fill:'backwards',easing:ease});
       const seedAnimation=art.animate([
-        {transform:'rotate(-38deg) scale(.05)',opacity:0},
-        {transform:'rotate(6deg) scale(1.09)',opacity:.85,offset:.75},
+        {transform:'translateY(8px) rotate(-48deg) scale(.05, .2)',opacity:0},
+        {transform:'translateY(-2px) rotate(8deg) scale(1.06, .96)',opacity:.9,offset:.72},
         {transform:'rotate(0deg) scale(1)',opacity:1}
       ],{duration:1200,delay:300+i*25,fill:'backwards',easing:ease});
       [branchAnimation,seedAnimation].forEach(animation => {

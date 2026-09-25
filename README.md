@@ -20,7 +20,7 @@ In GitHub Settings → Pages, choose “Deploy from a branch,” then `main` and
 - Seed shapes: circles for 36 journal outputs, gently scalloped circles for 31 conference outputs,
   and dashed circles for 9 other outputs (including interviews and reports or briefs).
 - Person sizes reflect total recorded outputs across all three years.
-- Seed sizes and branch lengths are decorative; their positions remain fixed across years.
+- Seed sizes, branch lengths, depth shading, and breeze motion are decorative; positions remain fixed across years.
 
 Counts preserve source records rather than deduplicating publications. PI categories
 use the authors' personnel records. Original source data and network:

@@ -25,3 +25,6 @@ main{display:grid;grid-template-columns:minmax(240px,1fr) minmax(0,2fr);gap:1.5r
 @media(max-width:800px){.type-legend{gap:1rem;margin-bottom:.45rem;font-size:.65rem}.type-legend svg{width:1.1rem;height:1.1rem}}
 
 .seed[data-output-shape="other"] .halo{stroke-dasharray:3 3;stroke-linecap:round}.type-legend [data-type-symbol="other"] path{stroke-dasharray:2 2;stroke-linecap:round}
+
+/* Shallow lighting and contrast layers give the canopy depth without changing data sizes. */
+.seed-light{fill:url(#seed-light);pointer-events:none;opacity:.75}.twig[data-depth="front"] .halo{filter:url(#seed-shadow);stroke-width:1.05;fill-opacity:.58}.twig[data-depth="back"] .halo{fill-opacity:.3}.twig[data-depth="front"] .branch{opacity:.64}.twig[data-depth="back"] .branch{opacity:.34}.twig[data-depth="back"] .filament{opacity:.42}.twig[data-depth="front"] .filament{opacity:.68}.twig .seed:hover .halo,.twig .seed:focus-visible .halo{fill-opacity:.8;stroke-width:1.8}.twig .seed.selected .halo{fill-opacity:.9}.person-dot{filter:drop-shadow(0 1px 1px #315f4f20)}.has-selection .seed-light{opacity:.45}
