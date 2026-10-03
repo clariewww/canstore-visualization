@@ -26,5 +26,10 @@ Counts preserve source records rather than deduplicating publications. PI catego
 use the authors' personnel records. Original source data and network:
 [CANSTORE interdisciplinary mapping](https://github.com/trisaratopss/canstore/tree/main/CANSTORE-interdisciplinary-mapping-clean).
 
+DIRECT-only profiles and workstreams use a separate, dated June 2025 presentation snapshot.
+Workstream participation is separate from publication authorship. No publication-to-workstream
+links have been verified. Partial rosters omit ambiguous or non-DIRECT references.
+Discover and Develop profiles and all original source records remain unchanged.
+
 Narrative titles and descriptions are intentionally left as placeholders.
 Outfit fonts are distributed with their included Open Font License.

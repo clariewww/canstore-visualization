@@ -20,6 +20,26 @@
   const {people, outputs} = window.CANSTORE_DATA;
   const byPerson = new Map(people.map(p => [p.person_id, p]));
   const byOutput = new Map(outputs.map(o => [o.publication_id, o]));
+  const direct = window.CANSTORE_DIRECT || {areas:[], workstreams:[], personContext:[], personWorkstreams:[], outputWorkstreams:[]};
+  const byWorkstream = new Map(direct.workstreams.map(w => [w.id, w]));
+  const byArea = new Map(direct.areas.map(a => [a.id, a]));
+  const directPeople = new Map(direct.personContext.filter(p => p.subteam === 'Direct').map(p => [p.person_id, p]));
+  const directBrowse = document.querySelector('#direct-browse');
+  const backButton = document.querySelector('#detail-back');
+  directBrowse.hidden = !byWorkstream.size;
+  let selectionHistory = [];
+  const expansionStates = new Map();
+  function directMemberships(id) {
+    return direct.personWorkstreams.filter(m => m.person_id === id && m.status === 'verified' && byWorkstream.has(m.workstream_id));
+  }
+  function verifiedWorkstreamOutputs(id) {
+    return new Set(direct.outputWorkstreams.filter(m => m.workstream_id === id && m.status === 'verified').map(m => m.publication_id));
+  }
+  function selectionTitle(next) {
+    if (next.kind === 'directory') return 'DIRECT workstreams';
+    if (next.kind === 'workstream') return byWorkstream.get(next.id).title;
+    return next.kind === 'output' ? byOutput.get(next.id).title : byPerson.get(next.id).name;
+  }
   const {layoutPeople, layoutOutputs, classifyPIs, contributorCounts, personRadius, outputShape, seedContourRadius, seedOutline} = window.CANSTORE_LAYOUT;
   const positions = layoutPeople(people, {cx, cy});
   const totals = contributorCounts(people, outputs);
@@ -234,6 +254,8 @@
   function recordButton(label, parent, next) {
     const button=text('button',label,parent,'record-link');
     button.type='button';
+    button.setAttribute('data-open-kind', next.kind);
+    button.setAttribute('data-open-id', next.id);
     button.addEventListener('click',()=>select(next,null,false));
     return button;
   }
@@ -247,16 +269,95 @@
   details.addEventListener('scroll', updateScrollHint, {passive:true});
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateScrollHint).observe(details);
 
+  function configureExpansion(element, key, initiallyOpen=false) {
+    if(expansionStates.has(key)?expansionStates.get(key):initiallyOpen)element.setAttribute('open','');
+    element.addEventListener('toggle',()=>{
+      if(!element.isConnected)return;
+      expansionStates.set(key,element.getAttribute('open')!==null);
+      updateScrollHint();
+    });
+  }
+  function sourceNote(parent, slides) {
+    text('p', `DIRECT team presentation · June 2025 · Slides ${[...new Set(slides)].sort((a,b)=>a-b).join(', ')}`, parent, 'context-source');
+  }
+  function workstreamList(parent, streams) {
+    const list=text('ul','',parent,'workstream-list');
+    streams.forEach(stream => recordButton(stream.title,text('li','',list),{kind:'workstream',id:stream.id}));
+  }
+  function renderDirectContext(person, parent) {
+    if(person.subteam !== 'Direct') return;
+    const context=directPeople.get(person.person_id), memberships=directMemberships(person.person_id);
+    if(!context || !memberships.length) return;
+    const section=text('section','',parent,'direct-context');
+    text('h3','Research involvement · June 2025',section,'list-heading');
+    if(context.role)text('p',`${context.role} in the presentation`,section,'context-role');
+    const streams=memberships.map(m=>byWorkstream.get(m.workstream_id));
+    const areaNames=direct.areas.filter(a=>streams.some(w=>w.area===a.id)).map(a=>a.title);
+    text('p',context.summary || `Listed in ${streams.length} workstream${streams.length===1?'':'s'} across ${areaNames.join(' and ')}.`,section,'record-note');
+    const expansion=text('details','',section,'context-expansion');
+    configureExpansion(expansion,`person:${person.person_id}`,streams.length<=3);
+    text('summary',`View ${streams.length} workstream${streams.length===1?'':'s'}`,expansion);
+    direct.areas.forEach(area=>{
+      const group=streams.filter(w=>w.area===area.id);
+      if(!group.length)return;
+      text('h4',area.title,expansion,'area-label');
+      workstreamList(expansion,group);
+    });
+    sourceNote(section,[...memberships.map(m=>m.slide),...(context.role?[context.roleSlide]:[])]);
+  }
+  function renderWorkstreamDetails(chosen) {
+    if(selection.kind==='directory'){
+      text('p','Explore DIRECT’s research activities in the June 2025 team presentation. Open an area to see its workstreams.',details,'context-intro');
+      const catalogue=text('div','',details,'workstream-catalogue');
+      direct.areas.forEach(area=>{
+        const expansion=text('details','',catalogue,'area-expansion');
+        configureExpansion(expansion,`area:${area.id}`);
+        text('summary',area.title,expansion);
+        text('p',area.description,expansion,'record-note');
+        workstreamList(expansion,direct.workstreams.filter(w=>w.area===area.id));
+        sourceNote(expansion,area.slides);
+      });
+      return;
+    }
+    const stream=byWorkstream.get(selection.id), area=byArea.get(stream.area);
+    text('p',`${area.title} · June 2025`,details,'context-eyebrow');
+    const body=text('div','',details,'record-body');
+    const facts=text('div','',body,'record-facts'), related=text('div','',body,'record-related');
+    text('h3','Area of work',facts,'list-heading');
+    text('p',area.description,facts,'record-note');
+    if(stream.description)text('p',stream.description,facts,'record-note');
+    text('p','Outlines show DIRECT workstream participation as of June 2025. This snapshot stays the same as you explore project years.',facts,'record-note');
+    sourceNote(facts,[...area.slides,stream.slide]);
+    text('h3',`Verified related outputs through Year ${year}`,facts,'list-heading context-output-heading');
+    if(!chosen.length)text('p','No publication-to-workstream links are verified for this view. This does not mean the workstream has no outputs.',facts,'record-note');
+    else{
+      const list=text('ul','',facts,'output-list');
+      chosen.forEach(output=>recordButton(output.title,text('li','',list),{kind:'output',id:output.publication_id}));
+    }
+    const ids=stream.person_ids.filter(id=>directPeople.has(id));
+    text('h3',`Matched DIRECT participants (${ids.length})`,related,'list-heading');
+    if(stream.partial)text('p','Partial roster: additional slide references need identity confirmation or fall outside the DIRECT roster.',related,'record-note roster-note');
+    const list=text('ul','',related,'workstream-roster');
+    ids.forEach(id=>{
+      const person=directPeople.get(id),li=text('li','',list);
+      if(byPerson.get(id)?.subteam==='Direct')recordButton(person.name,li,{kind:'person',id});
+      else{text('span',person.name,li,'roster-name');text('small','Presentation participant · no authored outputs in the current dataset',li,'roster-status');}
+    });
+  }
+
   function updateDetails(chosen) {
     shell.hidden=!selection; empty.hidden=!!selection;
     pinned.classList.toggle('has-selection',!!selection);
-    svg.classList.toggle('has-selection',!!selection);
+    svg.classList.toggle('has-selection',!!selection && selection.kind !== 'directory');
+    backButton.hidden = !selectionHistory.length;
     if(!selection){details.replaceChildren();return;}
     details.replaceChildren(); details.scrollTop=0;
-    const item=selection.kind==='output'?chosen[0]:byPerson.get(selection.id);
-    document.querySelector('#detail-kind').textContent=selection.kind==='output'?'Research output':'Contributor';
-    const heading=text('h2',selection.kind==='output'?item.title:item.name,details);
+    document.querySelector('#detail-kind').textContent={output:'Research output',person:'Contributor',workstream:'DIRECT workstream',directory:'DIRECT research'}[selection.kind];
+    const heading=text('h2',selectionTitle(selection),details);
     heading.id='detail-title'; heading.tabIndex=-1;
+    if(selection.kind==='workstream'||selection.kind==='directory'){renderWorkstreamDetails(chosen);return;}
+    const item=selection.kind==='output'?chosen[0]:byPerson.get(selection.id);
+    if(selection.kind==='person' && item.subteam==='Direct')text('p','DIRECT',details,'context-eyebrow');
     const body=document.createElement('div');body.className='record-body';details.append(body);
     const facts=document.createElement('div'), related=document.createElement('div');
     facts.className='record-facts'; related.className='record-related'; body.append(facts,related);
@@ -282,20 +383,23 @@
         item.author_ids.forEach(id=>{const p=byPerson.get(id),li=text('li','',list);recordButton(p.name,li,{kind:'person',id});text('span',`${p.subteam}${String(p.is_pi).toLowerCase()==='true'?' · PI':''}`,li,'team-tag');});
       }
     }else{
-      metadata(facts,[['Subteam',item.subteam],['Current status',String(item.active).toLowerCase()==='true'?'Active':'Inactive in source data'],['Role',String(item.is_pi).toLowerCase()==='true'?'Principal investigator':'Contributor'],['Outputs',`${chosen.length} through year ${year}`],['Node size',`${totals.get(item.person_id)} outputs across all three years`]]);
+      renderDirectContext(item,facts);
+      metadata(facts,[['Subteam',item.subteam],[item.subteam==='Direct'?'Status in source data':'Current status',String(item.active).toLowerCase()==='true'?'Active':'Inactive in source data'],['Role',String(item.is_pi).toLowerCase()==='true'?'Principal investigator':'Contributor'],['Outputs',`${chosen.length} through year ${year}`],['Node size',`${totals.get(item.person_id)} outputs across all three years`]]);
       if(String(item.active).toLowerCase()!=='true')text('p','Earlier contributions remain part of this research history.',facts,'record-note');
-      text('h3',`Research through year ${year}`,related,'list-heading');
+      text('h3',item.subteam==='Direct'?`Authored outputs through Year ${year}`:`Research through year ${year}`,related,'list-heading');
       if(!chosen.length)text('p','No outputs are recorded for this person by this year. Scroll forward to explore their later work.',related,'record-note');
       const list=text('ul','',related,'output-list');
       chosen.forEach(output=>{const li=text('li','',list);recordButton(output.title,li,{kind:'output',id:output.publication_id});text('span',`Year ${output.year} · ${output.type}`,li,'output-year');});
     }
   }
-  function select(next, trigger, toggle=true) {
-    if(trigger)lastTrigger=trigger;
+  function select(next, trigger, toggle=true, remember=true) {
+    if(trigger){lastTrigger=trigger;selectionHistory=[];}
+    else if(remember && selection && (selection.kind!==next.kind || selection.id!==next.id))selectionHistory.push({...selection});
     cancelGrowth();
     selection=toggle&&selection&&selection.kind===next.kind&&selection.id===next.id?null:next;
     syncMotion(); render();
-    const message=selection?`Selected ${selection.kind==='output'?byOutput.get(selection.id).title:byPerson.get(selection.id).name}. Details are below the flower.`:'Selection cleared.';
+    if(!selection)selectionHistory=[];
+    const message=selection?`Selected ${selectionTitle(selection)}. Details are below the flower.`:'Selection cleared.';
     document.querySelector('#selection-announcement').textContent=message;
     if(selection){
       if(!reducedMotion.matches)shell.animate([{opacity:.4,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:450,easing:ease});
@@ -303,33 +407,38 @@
     }
   }
   function clearSelection(restoreFocus=true) {
-    selection=null;render();syncMotion();
+    selection=null;selectionHistory=[];render();syncMotion();
     document.querySelector('#selection-announcement').textContent='Selection cleared.';
     if(restoreFocus&&lastTrigger?.isConnected&&lastTrigger.getClientRects().length)lastTrigger.focus({preventScroll:true});
   }
   function render() {
     tooltip.hidden=true;
     const visible=outputs.filter(o=>o.year<=year);
-    if(selection?.kind==='output'&&!visible.some(o=>o.publication_id===selection.id))selection=null;
-    const chosen=selection?visible.filter(o=>selection.kind==='output'?o.publication_id===selection.id:o.author_ids.includes(selection.id)):[];
+    selectionHistory=selectionHistory.filter(s=>s.kind!=='output'||visible.some(o=>o.publication_id===s.id));
+    if(selection?.kind==='output'&&!visible.some(o=>o.publication_id===selection.id)){selection=null;selectionHistory=[];}
+    const linked=selection?.kind==='workstream'?verifiedWorkstreamOutputs(selection.id):new Set();
+    const chosen=selection?visible.filter(o=>selection.kind==='output'?o.publication_id===selection.id:selection.kind==='person'?o.author_ids.includes(selection.id):selection.kind==='workstream'?linked.has(o.publication_id):false):[];
+    const isWorkstream=selection?.kind==='workstream';
+    const highlight=!!selection && selection.kind!=='directory';
     const activeOutputs=new Set(chosen.map(o=>o.publication_id));
-    const activePeople=new Set(chosen.flatMap(o=>o.author_ids));
+    const activePeople=new Set(isWorkstream?byWorkstream.get(selection.id).person_ids.filter(id=>byPerson.get(id)?.subteam==='Direct'):chosen.flatMap(o=>o.author_ids));
     if(selection?.kind==='person')activePeople.add(selection.id);
     outputs.forEach(output=>{
       const id=output.publication_id,node=seedElements.get(id),twig=twigs.get(id),path=branches.get(id);
       twig.style.display=output.year<=year?'':'none';
-      node.classList.toggle('dim',!!selection&&!activeOutputs.has(id));
+      node.classList.toggle('dim',highlight&&!activeOutputs.has(id));
       node.classList.toggle('selected',activeOutputs.has(id));
       node.setAttribute('aria-pressed',String(selection?.kind==='output'&&selection.id===id));
-      path.classList.toggle('dim',!!selection);
+      path.classList.toggle('dim',highlight);
     });
     personElements.forEach((node,id)=>{
-      node.classList.toggle('dim',!!selection&&!activePeople.has(id));
-      node.classList.toggle('selected',activePeople.has(id));
+      node.classList.toggle('dim',highlight&&!activePeople.has(id));
+      node.classList.toggle('selected',!isWorkstream&&activePeople.has(id));
+      node.classList.toggle('workstream-member',isWorkstream&&activePeople.has(id));
       node.setAttribute('aria-pressed',String(selection?.kind==='person'&&selection.id===id));
     });
     linkLayer.replaceChildren();
-    chosen.forEach(output=>output.author_ids.forEach(id=>{
+    if(!isWorkstream)chosen.forEach(output=>output.author_ids.forEach(id=>{
       const [x,y]=positions.get(id),[tx,ty]=outputPositions.get(output.publication_id);
       el('path',{d:`M${x},${y} Q${cx},${cy} ${tx},${ty}`,class:'author-link'},linkLayer);
     }));
@@ -361,6 +470,11 @@
     chapters.forEach(chapter=>chapterObserver.observe(chapter));
     followChapters();
   }
+  directBrowse.addEventListener('click',()=>select({kind:'directory',id:'direct'},directBrowse));
+  backButton.addEventListener('click',()=>{
+    const previous=selectionHistory.pop();
+    if(previous)select(previous,null,false,false);
+  });
   closeButton.addEventListener('click',()=>clearSelection());
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&selection)clearSelection();});
   addEventListener('resize',observeChapters);
