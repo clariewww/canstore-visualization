@@ -24,9 +24,7 @@
   const byWorkstream = new Map(direct.workstreams.map(w => [w.id, w]));
   const byArea = new Map(direct.areas.map(a => [a.id, a]));
   const directPeople = new Map(direct.personContext.filter(p => p.subteam === 'Direct').map(p => [p.person_id, p]));
-  const directBrowse = document.querySelector('#direct-browse');
   const backButton = document.querySelector('#detail-back');
-  directBrowse.hidden = !byWorkstream.size;
   let selectionHistory = [];
   const expansionStates = new Map();
   function directMemberships(id) {
@@ -36,7 +34,6 @@
     return new Set(direct.outputWorkstreams.filter(m => m.workstream_id === id && m.status === 'verified').map(m => m.publication_id));
   }
   function selectionTitle(next) {
-    if (next.kind === 'directory') return 'DIRECT workstreams';
     if (next.kind === 'workstream') return byWorkstream.get(next.id).title;
     return next.kind === 'output' ? byOutput.get(next.id).title : byPerson.get(next.id).name;
   }
@@ -277,9 +274,6 @@
       updateScrollHint();
     });
   }
-  function sourceNote(parent, slides) {
-    text('p', `DIRECT team presentation · June 2025 · Slides ${[...new Set(slides)].sort((a,b)=>a-b).join(', ')}`, parent, 'context-source');
-  }
   function workstreamList(parent, streams) {
     const list=text('ul','',parent,'workstream-list');
     streams.forEach(stream => recordButton(stream.title,text('li','',list),{kind:'workstream',id:stream.id}));
@@ -289,8 +283,8 @@
     const context=directPeople.get(person.person_id), memberships=directMemberships(person.person_id);
     if(!context || !memberships.length) return;
     const section=text('section','',parent,'direct-context');
-    text('h3','Research involvement · June 2025',section,'list-heading');
-    if(context.role)text('p',`${context.role} in the presentation`,section,'context-role');
+    text('h3','Research involvement',section,'list-heading');
+    if(context.role)text('p',context.role,section,'context-role');
     const streams=memberships.map(m=>byWorkstream.get(m.workstream_id));
     const areaNames=direct.areas.filter(a=>streams.some(w=>w.area===a.id)).map(a=>a.title);
     text('p',context.summary || `Listed in ${streams.length} workstream${streams.length===1?'':'s'} across ${areaNames.join(' and ')}.`,section,'record-note');
@@ -303,31 +297,16 @@
       text('h4',area.title,expansion,'area-label');
       workstreamList(expansion,group);
     });
-    sourceNote(section,[...memberships.map(m=>m.slide),...(context.role?[context.roleSlide]:[])]);
   }
   function renderWorkstreamDetails(chosen) {
-    if(selection.kind==='directory'){
-      text('p','Explore DIRECT’s research activities in the June 2025 team presentation. Open an area to see its workstreams.',details,'context-intro');
-      const catalogue=text('div','',details,'workstream-catalogue');
-      direct.areas.forEach(area=>{
-        const expansion=text('details','',catalogue,'area-expansion');
-        configureExpansion(expansion,`area:${area.id}`);
-        text('summary',area.title,expansion);
-        text('p',area.description,expansion,'record-note');
-        workstreamList(expansion,direct.workstreams.filter(w=>w.area===area.id));
-        sourceNote(expansion,area.slides);
-      });
-      return;
-    }
     const stream=byWorkstream.get(selection.id), area=byArea.get(stream.area);
-    text('p',`${area.title} · June 2025`,details,'context-eyebrow');
+    text('p',area.title,details,'context-eyebrow');
     const body=text('div','',details,'record-body');
     const facts=text('div','',body,'record-facts'), related=text('div','',body,'record-related');
     text('h3','Area of work',facts,'list-heading');
     text('p',area.description,facts,'record-note');
     if(stream.description)text('p',stream.description,facts,'record-note');
-    text('p','Outlines show DIRECT workstream participation as of June 2025. This snapshot stays the same as you explore project years.',facts,'record-note');
-    sourceNote(facts,[...area.slides,stream.slide]);
+    text('p','Outlines show DIRECT workstream participants.',facts,'record-note');
     text('h3',`Verified related outputs through Year ${year}`,facts,'list-heading context-output-heading');
     if(!chosen.length)text('p','No publication-to-workstream links are verified for this view. This does not mean the workstream has no outputs.',facts,'record-note');
     else{
@@ -336,26 +315,26 @@
     }
     const ids=stream.person_ids.filter(id=>directPeople.has(id));
     text('h3',`Matched DIRECT participants (${ids.length})`,related,'list-heading');
-    if(stream.partial)text('p','Partial roster: additional slide references need identity confirmation or fall outside the DIRECT roster.',related,'record-note roster-note');
+    if(stream.partial)text('p','Partial roster: only confirmed DIRECT participants are shown.',related,'record-note roster-note');
     const list=text('ul','',related,'workstream-roster');
     ids.forEach(id=>{
       const person=directPeople.get(id),li=text('li','',list);
       if(byPerson.get(id)?.subteam==='Direct')recordButton(person.name,li,{kind:'person',id});
-      else{text('span',person.name,li,'roster-name');text('small','Presentation participant · no authored outputs in the current dataset',li,'roster-status');}
+      else{text('span',person.name,li,'roster-name');text('small','No authored outputs in the current dataset',li,'roster-status');}
     });
   }
 
   function updateDetails(chosen) {
     shell.hidden=!selection; empty.hidden=!!selection;
     pinned.classList.toggle('has-selection',!!selection);
-    svg.classList.toggle('has-selection',!!selection && selection.kind !== 'directory');
+    svg.classList.toggle('has-selection',!!selection);
     backButton.hidden = !selectionHistory.length;
     if(!selection){details.replaceChildren();return;}
     details.replaceChildren(); details.scrollTop=0;
-    document.querySelector('#detail-kind').textContent={output:'Research output',person:'Contributor',workstream:'DIRECT workstream',directory:'DIRECT research'}[selection.kind];
+    document.querySelector('#detail-kind').textContent={output:'Research output',person:'Contributor',workstream:'DIRECT workstream'}[selection.kind];
     const heading=text('h2',selectionTitle(selection),details);
     heading.id='detail-title'; heading.tabIndex=-1;
-    if(selection.kind==='workstream'||selection.kind==='directory'){renderWorkstreamDetails(chosen);return;}
+    if(selection.kind==='workstream'){renderWorkstreamDetails(chosen);return;}
     const item=selection.kind==='output'?chosen[0]:byPerson.get(selection.id);
     if(selection.kind==='person' && item.subteam==='Direct')text('p','DIRECT',details,'context-eyebrow');
     const body=document.createElement('div');body.className='record-body';details.append(body);
@@ -419,7 +398,7 @@
     const linked=selection?.kind==='workstream'?verifiedWorkstreamOutputs(selection.id):new Set();
     const chosen=selection?visible.filter(o=>selection.kind==='output'?o.publication_id===selection.id:selection.kind==='person'?o.author_ids.includes(selection.id):selection.kind==='workstream'?linked.has(o.publication_id):false):[];
     const isWorkstream=selection?.kind==='workstream';
-    const highlight=!!selection && selection.kind!=='directory';
+    const highlight=!!selection;
     const activeOutputs=new Set(chosen.map(o=>o.publication_id));
     const activePeople=new Set(isWorkstream?byWorkstream.get(selection.id).person_ids.filter(id=>byPerson.get(id)?.subteam==='Direct'):chosen.flatMap(o=>o.author_ids));
     if(selection?.kind==='person')activePeople.add(selection.id);
@@ -470,7 +449,6 @@
     chapters.forEach(chapter=>chapterObserver.observe(chapter));
     followChapters();
   }
-  directBrowse.addEventListener('click',()=>select({kind:'directory',id:'direct'},directBrowse));
   backButton.addEventListener('click',()=>{
     const previous=selectionHistory.pop();
     if(previous)select(previous,null,false,false);
