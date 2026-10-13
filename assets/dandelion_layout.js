@@ -132,10 +132,10 @@
     return Math.sqrt(5.8 ** 2 + Math.max(0, Math.min(count / Math.max(1, maximum), 1)) * (9 ** 2 - 5.8 ** 2));
   }
 
-  function layoutOutputs(outputs, {cx = 450, cy = 414} = {}) {
+  function layoutOutputs(outputs, {cx = 450, cy = 414, scopeForOutput = output => output.scope || `Unassigned · ${output.subteam.replaceAll(';', ' + ')}`} = {}) {
     const groups = new Map();
     [...outputs].sort((a, b) => Number(a.publication_id) - Number(b.publication_id)).forEach(output => {
-      const key = output.scope || `Unassigned · ${output.subteam.replaceAll(';', ' + ')}`;
+      const key = scopeForOutput(output);
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(output);
     });

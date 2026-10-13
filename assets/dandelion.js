@@ -13,13 +13,14 @@
   const cx = 450, cy = 414;
   const ease = 'cubic-bezier(.22,.75,.24,1)';
   const colors = {Discover:'#acd5c5', Direct:'#b7a1b6', Develop:'#dfb592'};
-  if (!window.CANSTORE_DATA || !window.CANSTORE_LAYOUT) {
+  if (!window.CANSTORE_DATA || !window.CANSTORE_LAYOUT || !window.CANSTORE_SCOPES) {
     document.querySelector('#count').textContent = 'The research data could not load. Please reload this page.';
     return;
   }
   const {people, outputs} = window.CANSTORE_DATA;
   const byPerson = new Map(people.map(p => [p.person_id, p]));
   const byOutput = new Map(outputs.map(o => [o.publication_id, o]));
+  const scopes = new Map(outputs.map(o => [o.publication_id, window.CANSTORE_SCOPES.getScopeInfo(o)]));
   const direct = window.CANSTORE_DIRECT || {areas:[], workstreams:[], personContext:[], personWorkstreams:[], outputWorkstreams:[]};
   const byWorkstream = new Map(direct.workstreams.map(w => [w.id, w]));
   const byArea = new Map(direct.areas.map(a => [a.id, a]));
@@ -43,7 +44,7 @@
   const maximumTotal = Math.max(...totals.values());
   const classifications = new Map(outputs.map(output => [output.publication_id, classifyPIs(output, byPerson)]));
   const categoryLabels = {standard:'Standard output', 'multiple-pi':'Multiple-PI output', 'cross-pi':'Cross-subteam PI output'};
-  const flowerLayout = layoutOutputs(outputs, {cx, cy});
+  const flowerLayout = layoutOutputs(outputs, {cx, cy, scopeForOutput:output => scopes.get(output.publication_id).label});
   const outputPositions = new Map();
   const seedElements = new Map(), seedArt = new Map(), seedPulse = new Map(), personElements = new Map();
   const branches = new Map(), twigs = new Map(), swayAnimations = new Map();
@@ -122,10 +123,11 @@
   });
 
   flowerLayout.labels.forEach(({scope, count, angle}) => {
-    if (count < 4) return;
+    const groupInfo = [...scopes.values()].find(info => info.label === scope);
+    if (count < 4 && !groupInfo?.provisional) return;
     const [lx, ly] = point(angle, 395);
     const label = el('text', {x:lx, y:ly, class:'scope-label', 'text-anchor':'middle'}, labelLayer);
-    label.textContent = scope.startsWith('Unassigned') ? scope.replace('Unassigned · ', '') + ' · unassigned' : scope;
+    label.textContent = groupInfo?.provisional ? groupInfo.shortLabel : scope.startsWith('Unassigned') ? scope.replace('Unassigned · ', '') + ' · unassigned' : scope;
   });
   document.querySelectorAll('[data-type-symbol]').forEach(symbol => {
     el('path', {d:seedOutline(symbol.getAttribute('data-type-symbol'), 10)}, symbol);
@@ -341,7 +343,9 @@
     const facts=document.createElement('div'), related=document.createElement('div');
     facts.className='record-facts'; related.className='record-related'; body.append(facts,related);
     if(selection.kind==='output'){
-      metadata(facts,[['Project year',`Year ${item.year}`],['Output type',item.type],['Research scope',item.scope||'Unassigned'],['Status',item.status]]);
+      const scopeInfo=scopes.get(item.publication_id);
+      metadata(facts,[['Project year',`Year ${item.year}`],['Output type',item.type],['Research scope',scopeInfo.provisional?scopeInfo.label:item.scope||'Unassigned'],['Status',item.status]]);
+      if(scopeInfo.provisional)text('p',scopeInfo.needsReview?'Topic needs review; original scope is unassigned.':'Provisional topic grouping; original scope is unassigned.',facts,'record-note scope-status');
       if(item.venue)text('p',item.venue,facts,'record-note');
       if(item.doi){
         const href=item.doi.startsWith('http')?item.doi:'https://doi.org/'+item.doi;

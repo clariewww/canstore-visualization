@@ -32,5 +32,10 @@ Workstream participation is separate from publication authorship. No publication
 links have been verified. Partial rosters omit ambiguous or non-DIRECT references.
 Discover and Develop profiles and all original source records remain unchanged.
 
+DIRECT-associated outputs with blank source scopes use provisional topic groups:
+9 energy systems/governance, 5 community engagement/rights, 2 carbon conversion/CCUS,
+2 transdisciplinary/place-based research, and 2 needing review. The joint Discover/Direct
+record is included once. These display groups are separate from source scopes and verified workstreams.
+
 Narrative titles and descriptions are intentionally left as placeholders.
 Outfit fonts are distributed with their included Open Font License.
