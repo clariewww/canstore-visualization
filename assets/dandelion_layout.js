@@ -139,7 +139,10 @@
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(output);
     });
-    const points = [], labels = [], gap = .055;
+    const points = [], labels = [], gap = .075;
+    // A leaning, scalloped envelope gives the crown a designed outline.
+    // These decorative offsets never encode output importance or project year.
+    const envelope = a => 335 + 23 * Math.cos(a + 2.1) + 11 * Math.sin(3 * a + .6);
     const random = seededRandom(0xCA5708);
     const sweep = Math.PI * 2 - gap * groups.size;
     let angle = -Math.PI * .94;
@@ -149,11 +152,13 @@
       labels.push({scope, count: items.length, angle: angle + span / 2});
       items.forEach((output, i) => {
         const id = output.publication_id;
-        const anchor = angle + span * (i + .5) / items.length;
+        const fraction = (i + .5) / items.length;
+        const anchor = angle + span * (fraction + .065 * Math.sin(fraction * Math.PI * 4));
         // Continuous, seeded variation avoids repeating radial tiers. Full-period
         // coordinates are computed once, so time changes never rearrange seeds.
         const a = anchor + (random() - .5) * .085;
-        const radius = Math.sqrt(185 ** 2 + random() * (347 ** 2 - 185 ** 2));
+        const outer = envelope(a);
+        const radius = Math.sqrt(174 ** 2 + random() * (outer ** 2 - 174 ** 2));
         points.push({id, scope, anchor, radius: 18 + Number(id) * 7 % 11,
           x: Math.cos(a) * radius, y: Math.sin(a) * radius});
       });
@@ -174,8 +179,8 @@
       points.forEach(point => {
         const rawAngle = Math.atan2(point.y, point.x);
         const difference = Math.atan2(Math.sin(rawAngle - point.anchor), Math.cos(rawAngle - point.anchor));
-        const a = point.anchor + Math.max(-.18, Math.min(.18, difference));
-        const outerRadius = 352 + 10 * Math.sin(3 * a + .8) + 8 * Math.cos(2 * a);
+        const a = point.anchor + Math.max(-.26, Math.min(.26, difference));
+        const outerRadius = envelope(a);
         const radius = Math.max(174, Math.min(outerRadius, Math.hypot(point.x, point.y)));
         point.x = Math.cos(a) * radius; point.y = Math.sin(a) * radius;
       });

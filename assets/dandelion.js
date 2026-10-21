@@ -97,8 +97,8 @@
 
   const defs = el('defs', {});
   const wash = el('radialGradient', {id:'core-wash'}, defs);
-  el('stop', {offset:'0%', 'stop-color':'#d9e8d9', 'stop-opacity':'.72'}, wash);
-  el('stop', {offset:'70%', 'stop-color':'#d9e8d9', 'stop-opacity':'.35'}, wash);
+  el('stop', {offset:'0%', 'stop-color':'#d9e8d9', 'stop-opacity':'.32'}, wash);
+  el('stop', {offset:'45%', 'stop-color':'#d9e8d9', 'stop-opacity':'.12'}, wash);
   el('stop', {offset:'100%', 'stop-color':'#d9e8d9', 'stop-opacity':'0'}, wash);
   const light = el('radialGradient', {id:'seed-light', cx:'28%', cy:'22%', r:'78%'}, defs);
   el('stop', {offset:'0%', 'stop-color':'#fffef2', 'stop-opacity':'.78'}, light);
@@ -111,7 +111,7 @@
   const linkLayer = el('g', {'aria-hidden':'true'});
   const twigLayer = el('g', {});
   const core = el('g', {});
-  el('ellipse', {cx:cx-3, cy:cy+2, rx:107, ry:103, class:'core-wash'}, core);
+  el('ellipse', {cx:cx-10, cy:cy+4, rx:123, ry:108, class:'core-wash'}, core);
 
   [...people].sort((a,b) => a.name.localeCompare(b.name)).forEach(person => {
     const [x,y] = positions.get(person.person_id);
@@ -136,7 +136,7 @@
     const shape = outputShape(output.type);
     const id = output.publication_id, phase = Number(id) * 2.399963;
     const {x, y, angle:a, radius:seedRadius, scope, controlAngle} = flowerLayout.positions.get(id);
-    const [sx, sy] = point(a, 101);
+    const [sx, sy] = point(a, 76 + 8 * Math.sin(a * 3 + .8));
     const [mx, my] = point(controlAngle, 180 + Math.sin(phase) * 10);
     outputPositions.set(id, [x, y]);
     // Decorative depth is independent of output type, year and collaboration.
@@ -153,12 +153,14 @@
     seedPulse.set(id, pulse);
     el('path', {d:seedOutline(shape, seedRadius), class:'halo'}, pulse);
     el('path', {d:seedOutline(shape, seedRadius - .8), class:'seed-light', 'aria-hidden':'true'}, pulse);
-    for (let j=0; j<10; j++) {
-      const theta = j * Math.PI / 5 + Math.sin(phase) * .18;
-      const contourRadius = seedContourRadius(shape, seedRadius, theta);
-      const tx = Math.cos(theta) * contourRadius, ty = Math.sin(theta) * contourRadius;
-      el('path', {d:`M${Math.cos(theta)*4},${Math.sin(theta)*4} L${tx},${ty}`, class:'filament'}, pulse);
-      el('circle', {cx:tx, cy:ty, r:1.15, class:'seed-tip'}, pulse);
+    // Five open, gently swept filaments keep the category contour legible.
+    for (let j=0; j<5; j++) {
+      const theta = j * Math.PI * 2 / 5 + Math.sin(phase) * .18;
+      const tip = seedContourRadius(shape, seedRadius, theta) * .83;
+      const tx = Math.cos(theta) * tip, ty = Math.sin(theta) * tip;
+      const bx = Math.cos(theta + .22) * tip * .58;
+      const by = Math.sin(theta + .22) * tip * .58;
+      el('path', {d:`M${Math.cos(theta)*7},${Math.sin(theta)*7} Q${bx},${by} ${tx},${ty}`, class:'filament'}, pulse);
     }
     if (pi.category === 'cross-pi') {
       el('path', {d:'M0,-6 L6,0 L0,6 L-6,0 Z', class:'pi-diamond'}, pulse);
@@ -447,6 +449,8 @@
     setYear(active);
   }
   function observeChapters() {
+    // Scope labels are hidden on phones; reclaim their margins without moving nodes.
+    svg.setAttribute('viewBox', compactView.matches ? '75 15 730 830' : '10 15 880 830');
     chapterObserver?.disconnect();
     const line=innerHeight*(compactView.matches ? .76 : .55);
     chapterObserver=new IntersectionObserver(followChapters,{rootMargin:`0px 0px -${Math.max(0,innerHeight-line)}px 0px`,threshold:[0,1]});
